@@ -1,0 +1,45 @@
+name: 问题反馈
+description: 计时不准、界面错位、功能异常等
+title: "[问题] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。请尽量把下面几项填全，定位会快很多。
+        如果是赛制时长本身有疑问，请附上赛事手册的对应条款。
+  - type: input
+    id: version
+    attributes:
+      label: 版本与平台
+      description: 版本号在左上角标题旁；平台写 Windows exe / 网页版 / macOS / 手机浏览器
+      placeholder: v1.1.0，Windows exe，笔记本 1920×1080
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: 发生了什么
+      description: 当时的界面状态，越具体越好
+      placeholder: 进入「反方报告」后按空格，数字没有变化，标题也没有切到「正反讨论」
+    validations:
+      required: true
+  - type: textarea
+    id: expect
+    attributes:
+      label: 你期望的结果
+      placeholder: 应该开始计时，剩余 03:00 往下走
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 对阵表里选第一轮 / 第 1 阶段 / 325
+        2. 点「开始」
+        3. 连按两次 Enter 跳到反方报告
+        4. 按空格
+  - type: input
+    id: extra
+    attributes:
+      label: 截图或补充
+      description: 可以把截图拖进这条 Issue 的输入框
