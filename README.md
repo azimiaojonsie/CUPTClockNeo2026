@@ -17,7 +17,7 @@
 | 平台 | 获取方式 | 说明 |
 | --- | --- | --- |
 | Windows | 本仓库 **Releases** 里的压缩包 | 绿色版，解压双击即用，不写注册表 |
-| macOS | 仓库内 `CUPTClockNeo2026-v1.1-macOS/` | 到 Mac 上双击 `双击打包.command`，自动下载运行时并生成 `.app` |
+| macOS | 仓库内 `CUPTClockNeo2026-v1.1-macOS/` | 到 Mac 上双击 `双击打包.command`，自动下载运行时并生成 `.app`；双击无反应时按 `打包说明.md` 里的 `chmod` 命令跑一次 |
 | 任意平台 | 直接打开 `CUPTClockNeo2026-v1.1.html` | 单文件，双击即用，可以单独拷进 U 盘 |
 
 > Windows 版没有直接放进仓库：Electron 运行时有 238 MB 的单个可执行文件，超过 GitHub 100 MB 的单文件限制，因此放在 Releases 附件里。
