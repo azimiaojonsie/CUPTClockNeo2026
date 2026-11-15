@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CUPTClockNeo 2026 · 计时台</title>
+<style>
+:root{
+  --bg:#0A0C0F; --panel:#12161B; --panel2:#181D24; --line:#252C35;
+  --text:#E9EFF6; --dim:#8B98A8; --dim2:#5E6B7A;
+  --green:#3DDC84; --amber:#F2B33D; --red:#FF5A5A;
+  --mono:"Consolas","Cascadia Mono",ui-monospace,"SF Mono",monospace;
+  --sans:"Segoe UI","Microsoft YaHei","PingFang SC",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased}
+
+#app{height:100vh;height:100dvh;display:grid;grid-template-rows:46px minmax(0,1fr);max-width:100vw;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:26px;padding:0 14px;border-bottom:1px solid var(--line);background:var(--panel);min-width:0}
+.brand{font-size:11.5px;font-weight:500;letter-spacing:.05em;white-space:nowrap;color:#7E8C9C}
+.brand em{font-style:normal;color:var(--dim2);font-size:10px;margin-left:5px;font-family:var(--mono)}
+
+.meta-strip{display:flex;align-items:baseline;gap:30px;padding:4px 10px;margin-left:2px;border-left:1px solid #323B46;border-radius:7px;cursor:pointer;transition:background .14s;min-width:0;overflow:hidden}
+.meta-strip:hover{background:#181E25}
+.mi{display:flex;align-items:baseline;gap:8px;min-width:0}
+.mi .k{font-size:10px;color:var(--dim2);letter-spacing:.14em;white-space:nowrap}
+.mi .v{font-size:18px;font-weight:600;letter-spacing:.02em;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px}
+.mi .v.topic{color:#8FE3B4;font-weight:500;font-size:16px}
+.spacer{flex:1}
+.actions{display:flex;gap:6px;flex:none}
+
+.btn{appearance:none;font-family:inherit;font-size:12.5px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer;transition:background .14s,border-color .14s;white-space:nowrap}
+.btn:hover{background:#1F252D;border-color:#39424E}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.primary{background:#1B7A4C;border-color:#28975F;color:#EDFCF4;font-weight:500}
+.btn.primary:hover{background:#219058}
+.btn.primary.warn{background:#8A5A12;border-color:#B57A23;color:#FFF7E8}
+.btn.big{font-size:16px;padding:14px 36px;border-radius:11px;font-weight:500}
+.btn.ghost{background:transparent}
+.btn.tiny{font-size:11.5px;padding:5px 9px}
+
+main{display:grid;grid-template-columns:minmax(0,1fr) 236px;gap:12px;padding:12px;min-height:0}
+
+.face{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;padding:26px 34px 16px;overflow:hidden;min-height:0}
+.f-head{padding-right:132px}
+.f-teams{font-size:17px;color:#9AA8B8;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.f-stage{font-size:clamp(32px,3.8vw,58px);font-weight:600;letter-spacing:.03em;line-height:1.1;margin-top:7px}
+.f-hint{font-size:13.5px;color:var(--dim);margin-top:7px;min-height:18px}
+.f-body{flex:1;display:flex;align-items:center;justify-content:space-between;gap:2vw;min-height:0;padding-bottom:22px}.f-left{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.f-remain{font-size:min(33vh,22vw);line-height:1;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;color:var(--green);transition:color .18s;margin-bottom:.4vh}
+.f-remain.warn{color:var(--amber)}
+.f-remain.danger{color:var(--red)}
+.f-remain.over{color:var(--red);animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.42}}
+.f-sub{font-size:12px;color:#6E7C8B;margin-top:2px;letter-spacing:.1em;min-height:15px}
+.f-ring{position:relative;width:min(33vh,23vw);aspect-ratio:1;flex:none}
+.f-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.f-ring .track{fill:none;stroke:#242E39;stroke-width:6}
+.f-ring .arc{fill:none;stroke:var(--green);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .25s linear,stroke .2s}
+.f-ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(14px,1.4vw,22px);color:#A9B8C8;font-variant-numeric:tabular-nums}
+.f-bottom{display:flex;flex-direction:column;gap:10px}
+.f-controls{display:flex;flex-wrap:wrap;gap:12px;justify-content:flex-start;align-items:center}
+.f-controls .btn{font-size:14.5px;padding:11px 18px;border-radius:10px}
+.f-controls .btn.big{font-size:19px;padding:18px 46px;border-radius:13px}
+.f-footline{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #1E262F;padding-top:9px;font-size:12.5px;color:#6E7C8B;font-variant-numeric:tabular-nums}
+.f-clock{font-family:var(--mono);color:#55616E;font-size:12px}
+.f-badge{position:absolute;top:24px;right:34px;display:inline-flex;align-items:center;gap:7px;padding:5px 13px;border-radius:99px;border:1px solid #2A3542;font-size:12px;letter-spacing:.08em;color:#8B98A8;z-index:2}
+.f-badge i{width:7px;height:7px;border-radius:50%;background:#5E6B7A;display:block}
+.f-badge.run{color:#8FF0BC;border-color:rgba(61,220,132,.42);background:rgba(61,220,132,.08)}
+.f-badge.run i{background:#3DDC84;box-shadow:0 0 10px #3DDC84}
+.f-badge.pause{color:#F2B33D;border-color:rgba(242,179,61,.42);background:rgba(242,179,61,.08)}
+.f-badge.pause i{background:#F2B33D}
+.f-badge.over{color:#FF6B6B;border-color:rgba(255,90,90,.45);background:rgba(255,90,90,.08)}
+.f-badge.over i{background:#FF5A5A}
+
+.side{display:flex;flex-direction:column;gap:10px;min-height:0}
+.side-list{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:13px;overflow:auto;padding:6px}
+.side-h{font-size:10px;letter-spacing:.1em;color:#6E7C8B;padding:6px 8px 5px}
+.row{display:grid;grid-template-columns:19px 1fr auto;gap:7px;align-items:center;padding:5.5px 8px;border-radius:7px;cursor:pointer;font-size:12.5px;color:#98A5B5;border:1px solid transparent}
+.row:hover{background:#1A2028}
+.row.on{background:rgba(42,163,101,.13);color:var(--text);border-color:rgba(42,163,101,.45)}
+.row.done{color:var(--dim2)}
+.row .idx{font-family:var(--mono);font-size:10.5px;color:var(--dim2);text-align:right}
+.row .tt{font-family:var(--mono);font-size:11.5px;font-variant-numeric:tabular-nums}
+.row.sub{padding:4px 8px;font-size:11.5px;opacity:.75;cursor:default;border-left:1px solid var(--line);margin-left:12px}
+.row.sub:hover{background:transparent}
+
+.side-keys{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:9px 11px;font-size:11px;color:#7C8A99;line-height:1.95;flex:none}
+.side-keys .kh{font-size:10px;letter-spacing:.1em;color:#55616E;margin-bottom:4px}
+.side-keys kbd{font-family:var(--mono);font-size:10.5px;background:#1B212A;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;color:#A9B6C4;margin-right:3px}
+
+.sheet{position:fixed;inset:0;background:rgba(4,6,9,.72);display:none;align-items:center;justify-content:center;z-index:60;backdrop-filter:blur(3px)}
+.sheet.on{display:flex}
+.sheet-box{width:min(940px,94vw);max-height:86vh;background:#10151A;border:1px solid #2C3540;border-radius:15px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
+.sheet-h h2{font-size:14.5px;font-weight:500;letter-spacing:.03em}
+.sheet-b{padding:16px;overflow:auto;font-size:13px;line-height:1.75;color:#9AA8B8;scrollbar-width:thin;scrollbar-color:#2A3542 transparent}
+.sheet-b::-webkit-scrollbar{width:9px;height:9px}
+.sheet-b::-webkit-scrollbar-track{background:transparent}
+.sheet-b::-webkit-scrollbar-thumb{background:#26303B;border-radius:99px;border:2px solid #10151A}
+.sheet-b::-webkit-scrollbar-thumb:hover{background:#36424F}
+.sheet-b h3{font-size:12.5px;color:var(--text);font-weight:500;margin:14px 0 7px}
+.sheet-b h3:first-child{margin-top:0}
+.sheet-b p{margin:0 0 10px}
+.sheet-b p.quote{background:#0C1116;border-left:2px solid #2E3A47;padding:10px 14px;color:#AEBBC9;line-height:1.9}
+.sheet-b table{width:100%;border-collapse:collapse;font-size:12.5px;margin:6px 0 4px}
+.sheet-b th,.sheet-b td{text-align:left;padding:7px 9px;border-bottom:1px solid #1E252D;vertical-align:top}
+.sheet-b th{color:var(--dim2);font-weight:400;font-size:11px;letter-spacing:.05em}
+.sheet-b td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+.sheet-b th.num{text-align:right}
+.sheet-b table.flow th:nth-child(1),.sheet-b table.flow td:nth-child(1){width:38px}
+.sheet-b table.flow th:nth-child(2),.sheet-b table.flow td:nth-child(2){width:176px}
+.sheet-b table.flow th:nth-child(3),.sheet-b table.flow td:nth-child(3){width:106px;white-space:nowrap}
+.sheet-b table.kv th:nth-child(1),.sheet-b table.kv td:nth-child(1){width:84px}
+.sheet-b .note{color:var(--amber);font-size:12px;margin-top:10px}
+.sheet-b input,.sheet-b select{font-family:inherit;font-size:13px;background:#0C1015;border:1px solid var(--line);color:var(--text);border-radius:7px;padding:6px 9px;outline:none;width:100%}
+.sheet-b input:focus,.sheet-b select:focus{border-color:#3A7BD5}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field label{font-size:10.5px;color:var(--dim2);letter-spacing:.06em}
+.team-row{display:grid;grid-template-columns:42px 1fr;gap:9px;align-items:center;margin-bottom:7px}
+.team-row span{font-family:var(--mono);color:var(--dim2);font-size:12px}
+.sheet-actions{position:sticky;bottom:0;display:flex;gap:9px;margin-top:16px;padding:13px 0 5px;background:#10151A;border-top:1px solid var(--line)}
+.roster{display:grid;grid-template-columns:52px 64px 1fr;gap:8px;align-items:center;margin-bottom:5px;font-size:12.5px}
+.roster .role{color:#8FE3B4;font-size:12px}
+.roster .role.obs{color:#7E8FA3}
+.empty{color:var(--dim2);text-align:center;padding:26px 0}
+.disclaimer{margin-top:24px;padding:18px 20px;border:1px solid #3A4756;border-radius:12px;background:#0D1319}
+.disclaimer h4{font-size:13.5px;color:#E9EFF6;font-weight:600;letter-spacing:.14em;margin:0 0 12px;text-align:center}
+.disclaimer p{font-size:12.5px;line-height:1.9;color:#8B98A8;margin:0 0 9px}
+.disclaimer p:last-of-type{margin-bottom:0}
+.disclaimer b{color:#C8D4E0;font-weight:500}
+.disclaimer .sign{text-align:right;color:#7E8C9C;font-size:11.5px;margin-top:12px;letter-spacing:.04em}
+.filepick{position:relative;overflow:hidden;display:inline-block}
+.filepick input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.bank-hint{margin-top:9px;padding:9px 11px;border:1px solid #232C36;border-radius:8px;background:#0D1217;font-size:11.5px;line-height:1.7;color:#7E8C9C}
+.bank-hint b{color:#A9B8C8;font-weight:500}
+.bank-hint .fmt{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;align-items:baseline;margin:7px 0}
+.bank-hint code{font-family:var(--mono);font-size:11px;color:#8FE3B4;background:#121A21;border:1px solid #1E2A34;padding:2px 7px;border-radius:5px;white-space:nowrap;margin-right:5px}
+.bank-hint .fmt code{margin-right:0}
+.bank-hint .fmt span{color:#6E7C8B}
+
+#screen{position:fixed;inset:0;background:#05070A;color:#F2F6FA;display:none;flex-direction:column;padding:3.2vh 4vw 2.6vh;cursor:none}
+body.display #screen{display:flex}
+body.display #app{display:none}
+body.display{cursor:none}
+.sc-badge{position:absolute;top:3.2vh;right:4vw;display:inline-flex;align-items:center;gap:8px;padding:.5em 1.1em;border-radius:99px;border:1px solid #2A3542;font-size:clamp(12px,1.2vw,18px);letter-spacing:.08em;color:#8B98A8}
+.sc-badge i{width:.55em;height:.55em;border-radius:50%;background:#5E6B7A;display:block}
+.sc-badge.run{color:#8FF0BC;border-color:rgba(61,220,132,.42);background:rgba(61,220,132,.08)}
+.sc-badge.run i{background:#3DDC84;box-shadow:0 0 10px #3DDC84}
+.sc-badge.pause{color:#F2B33D;border-color:rgba(242,179,61,.42);background:rgba(242,179,61,.08)}
+.sc-badge.pause i{background:#F2B33D}
+.sc-badge.over{color:#FF6B6B;border-color:rgba(255,90,90,.45);background:rgba(255,90,90,.09)}
+.sc-badge.over i{background:#FF5A5A}
+.sc-head{margin-top:1.4vh}
+.sc-teams{font-size:clamp(16px,1.8vw,30px);color:#93A3B6;letter-spacing:.04em}
+.sc-stage{font-size:clamp(32px,4.4vw,74px);font-weight:600;letter-spacing:.03em;line-height:1.08;margin-top:1.1vh}
+.sc-stage.waiting{font-size:clamp(20px,2.4vw,34px);color:#5E6B7A;font-weight:400}
+.sc-main{flex:1;display:flex;align-items:center;justify-content:space-between;gap:3vw;min-height:0}
+.sc-left{display:flex;flex-direction:column;justify-content:center;min-width:0}
+.sc-remain{font-family:var(--sans);font-size:min(36vh,23vw);line-height:.94;font-weight:600;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;color:#3DDC84;transition:color .2s;margin-bottom:.4vh}
+.sc-remain.warn{color:#F2B33D}
+.sc-remain.danger{color:#FF5A5A}
+.sc-remain.over{color:#FF5A5A;animation:pulse 1.1s ease-in-out infinite}
+.sc-sub{font-size:clamp(13px,1.3vw,19px);color:#7E8FA3;letter-spacing:.06em}
+.sc-ring{position:relative;width:min(38vh,26vw);flex:none;aspect-ratio:1}
+.sc-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.sc-ring .track{fill:none;stroke:#242E39;stroke-width:5}
+.sc-ring .arc{fill:none;stroke:#3DDC84;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .25s linear,stroke .2s}
+.sc-ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:clamp(16px,2vw,32px);color:#A9B8C8;font-variant-numeric:tabular-nums}
+.sc-foot{display:flex;align-items:center;justify-content:space-between;font-size:clamp(13px,1.3vw,19px);color:#7E8FA3;padding-top:1.4vh;border-top:1px solid #161C24}
+.sc-next b{color:#C6D3E0;font-weight:400}
+.sc-date{font-family:var(--mono);letter-spacing:.05em;font-size:clamp(11px,1.1vw,16px);color:#4E5A68}
+.sc-hint{position:absolute;left:4vw;bottom:7.4vh;font-size:clamp(11px,1vw,15px);color:#3DDC84;opacity:0;transition:opacity .25s;letter-spacing:.06em;pointer-events:none}
+@media (max-aspect-ratio:4/3){
+  .sc-main{flex-direction:column;align-items:flex-start;justify-content:center;gap:2vh}
+  .sc-ring{width:min(22vh,34vw)}
+}
+
+.side-toggle{display:none;position:fixed;right:14px;bottom:14px;z-index:50;align-items:center;gap:6px;font-size:13px;padding:9px 16px;border-radius:99px;background:#1B7A4C;border:1px solid #28975F;color:#EDFCF4;box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;font-family:inherit}
+.side-toggle:active{background:#219058}
+
+.rotate-tip{display:none;position:fixed;inset:0;background:var(--bg);z-index:90;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:var(--dim);text-align:center;padding:44px}
+.rotate-tip b{font-size:20px;color:var(--text);font-weight:600;letter-spacing:.06em}
+.rotate-tip span{font-size:13px;line-height:1.9}
+.rotate-tip .phone{width:52px;height:90px;border:3px solid #3A4756;border-radius:11px;position:relative}
+.rotate-tip .phone::after{content:"";position:absolute;left:50%;bottom:5px;width:14px;height:3px;background:#3A4756;border-radius:2px;transform:translateX(-50%)}
+@supports (container-type:size){
+  .face{container-type:size;container-name:face}
+  .f-remain{font-size:calc(min(44cqh,24cqw) * var(--fit,1))}
+  .f-ring{width:calc(min(44cqh,26cqw) * var(--fit,1))}
+  .f-stage{font-size:clamp(24px,min(7cqh,4.6cqw),58px)}
+}
+
+@media (max-height:640px){
+  #app{grid-template-rows:42px minmax(0,1fr)}
+  .topbar{height:42px}
+  .face{padding:15px 22px 10px}
+  .f-teams{font-size:13.5px}
+  .f-hint{font-size:11.5px;margin-top:4px;min-height:0}
+  .f-body{padding-bottom:12px}
+  .f-sub{font-size:10.5px;min-height:0;margin-top:0}
+  .f-controls .btn{font-size:12.5px;padding:8px 13px;border-radius:8px}
+  .f-controls .btn.big{font-size:15px;padding:11px 28px;border-radius:10px}
+  .f-controls{gap:8px}
+  .f-bottom{gap:6px}
+  .f-footline{padding-top:6px;font-size:11px}
+  .f-badge{top:13px;right:22px;font-size:10.5px;padding:3px 9px}
+  .side-keys{display:none}
+  .sheet-box{max-height:92vh}
+}
+
+@media (max-height:520px){
+  .f-sub{display:none}
+}
+
+@media (max-width:900px){  main{grid-template-columns:minmax(0,1fr);padding:8px;gap:0}
+  .side{position:fixed;top:0;right:0;bottom:0;width:268px;background:var(--bg);padding:8px;transform:translateX(103%);transition:transform .22s ease;z-index:45;box-shadow:-14px 0 44px rgba(0,0,0,.55);display:flex}
+  .side.open{transform:none}
+  .side-keys{display:none}
+  .side-toggle{display:flex}
+  .f-clock{display:none}
+  .topbar{gap:10px;padding:0 10px}
+  .meta-strip{gap:12px;padding:2px 6px}
+  .mi{gap:5px}
+  .mi .k{font-size:9px;letter-spacing:.08em}
+  .mi .v{font-size:14.5px;max-width:110px}
+  .mi .v.topic{font-size:13px;max-width:92px}
+  .actions{gap:4px}
+  .actions .btn{font-size:11px;padding:6px 8px;border-radius:6px}
+}
+
+@media (max-width:760px) and (orientation:portrait){
+  .rotate-tip{display:flex}
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header class="topbar">
+    <div class="brand">CUPTClockNeo<em>v1.1</em></div>
+    <div class="meta-strip" id="metaStrip" title="点此打开对阵表">
+      <div class="mi"><span class="k">轮次</span><span class="v" id="mRound">第一轮</span></div>
+      <div class="mi"><span class="k">阶段</span><span class="v" id="mStage">第 1 阶段</span></div>
+      <div class="mi"><span class="k">教室</span><span class="v" id="mRoom">6501</span></div>
+      <div class="mi"><span class="k">题目</span><span class="v topic" id="mTopic">未选</span></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="actions">
+      <button class="btn" id="btnScreen">展示窗</button>
+      <button class="btn" data-sheet="draw">对阵表</button>
+      <button class="btn" data-sheet="records">记录</button>
+      <button class="btn" data-sheet="rules">说明</button>
+      <button class="btn ghost" data-sheet="settings">设置</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="face">
+      <div class="f-badge" id="fBadge"><i></i><span>就绪</span></div>
+      <div class="f-head">
+        <div class="f-teams" id="fTeams"></div>
+        <div class="f-stage" id="stageName">挑战与回应</div>
+        <div class="f-hint" id="stageHint">反方挑战 → 正方接受 / 拒绝</div>
+      </div>
+      <div class="f-body">
+        <div class="f-left">
+          <div class="f-remain" id="remain">01:00</div>
+          <div class="f-sub" id="fSub"></div>
+        </div>
+        <div class="f-ring">
+          <svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="54"></circle><circle class="arc" id="fArc" cx="60" cy="60" r="54" stroke-dasharray="339.3" stroke-dashoffset="339.3"></circle></svg>
+          <div class="pct" id="fPct">0%</div>
+        </div>
+      </div>
+      <div class="f-bottom">
+        <div class="f-controls">
+          <button class="btn primary big" id="btnStart">开始</button>
+          <button class="btn" id="btnNext">下一环节</button>
+          <button class="btn" id="btnSplit" hidden>进入讨论</button>
+          <button class="btn" id="btnAdd">+1 分钟</button>
+          <button class="btn" id="btnReset">重置本项</button>
+        </div>
+        <div class="f-footline">
+          <div id="fNext"></div>
+          <div class="f-clock" id="fClock"></div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="side-list" id="stageList"></div>
+      <div class="side-keys" id="sideKeys"></div>
+    </aside>
+  </main>
+</div>
+
+<div id="screen">
+  <div class="sc-badge" id="scBadge"><i></i><span>就绪</span></div>
+  <div class="sc-head">
+    <div class="sc-teams" id="scTeams"></div>
+    <div class="sc-stage" id="scStage">挑战与回应</div>
+  </div>
+  <div class="sc-main">
+    <div class="sc-left">
+      <div class="sc-remain" id="scRemain">01:00</div>
+      <div class="sc-sub" id="scSub">剩余时间</div>
+    </div>
+    <div class="sc-ring">
+      <svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="54"></circle><circle class="arc" id="scArc" cx="60" cy="60" r="54" stroke-dasharray="339.3" stroke-dashoffset="339.3"></circle></svg>
+      <div class="pct" id="scPct">0%</div>
+    </div>
+  </div>
+  <div class="sc-foot">
+    <div class="sc-next" id="scNext"></div>
+    <div class="sc-date" id="scClock"></div>
+  </div>
+  <div class="sc-hint" id="scHint"></div>
+</div>
+
+<div class="sheet" id="sheet"><div class="sheet-box"><div class="sheet-h"><h2 id="sheetTitle"></h2><button class="btn ghost" id="sheetClose">关闭</button></div><div class="sheet-b" id="sheetBody"></div></div></div>
+
+<button class="side-toggle" id="sideToggle">流程</button>
+<div class="rotate-tip">
+  <div class="phone"></div>
+  <b>请横屏使用</b>
+  <span>这个计时台按横屏设计<br>旋转设备后即可正常显示</span>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var QS = new URLSearchParams(location.search);
+  var IS_SCREEN = QS.get('display') === '1';
+  var IS_DEMO = QS.get('demo') === '1';
+
+  /* ============================ 赛程 ============================ */
+
+  var STAGES = [
+    { key: 'challenge', name: '挑战与回应', hint: '反方挑战 → 正方接受 / 拒绝', sec: 60 },
+    { key: 'prepRep',   name: '正方准备',   hint: '', sec: 60 },
+    { key: 'repReport', name: '正方报告',   hint: '陈述、实验与理论', sec: 720 },
+    { key: 'oppAsk',    name: '反方提问',   hint: '正方回答', sec: 120 },
+    { key: 'prepOpp',   name: '反方准备',   hint: '', sec: 120 },
+    { key: 'oppBlock',  name: '反方报告',   hint: '最多 3 分钟，未用完自动并入讨论', sec: 180,
+      container: { total: 780, split: 180, discName: '正反讨论', discHint: '讨论 10 分钟起，反方没用完的时间自动补进来' } },
+    { key: 'revAsk',    name: '评论方提问', hint: '正、反方回答', sec: 180 },
+    { key: 'prepRev',   name: '评论方准备', hint: '', sec: 120 },
+    { key: 'revReport', name: '评论方报告', hint: '', sec: 240 },
+    { key: 'repSum',    name: '正方总结',   hint: '', sec: 60 },
+    { key: 'score',     name: '裁判打分',   hint: '出示评分', sec: 240 },
+    { key: 'jury',      name: '裁判点评',   hint: '', sec: 300 }
+  ];
+
+  var ROLES = {
+    3: [['正方', '反方', '评论'], ['评论', '正方', '反方'], ['反方', '评论', '正方']],
+    4: [['正方', '反方', '评论', '观摩'], ['观摩', '正方', '反方', '评论'],
+        ['评论', '观摩', '正方', '反方'], ['反方', '评论', '观摩', '正方']]
+  };
+
+  var DEFAULT_TOPICS = [
+    { no: '1',  en: 'Invent yourself: Pinhole sunglasses', zh: '自我发明：针孔太阳镜' },
+    { no: '3',  en: 'Snail ball', zh: '蜗牛球' },
+    { no: '5',  en: 'Y-shaped pendulum', zh: 'Y 形摆' },
+    { no: '8',  en: 'Upward-driven disc', zh: '上驱圆盘' },
+    { no: '9',  en: 'Photographic bokeh', zh: '摄影散景' },
+    { no: '12', en: 'Dotted line trick', zh: '点线现象' },
+    { no: '15', en: 'Cold drink', zh: '冰镇冷饮' },
+    { no: '16', en: 'Magnetic carousel', zh: '磁力旋转木马' },
+    { no: '17', en: 'Falling book cover', zh: '下落的书封' }
+  ];
+
+  var ROOM_PRESET = ['325', '6501', '6505', '6506', '6507'];
+
+  var DEFAULT_DRAW = {
+    teams: { A: 'A', B: 'B', C: 'C', D: 'D', E: 'E', F: 'F', G: 'G', H: 'H', I: 'I', J: 'J', K: 'K', L: 'L' },
+    rounds: [
+      { name: '第一轮', rooms: { '325': ['A', 'B', 'C', ''], '6505': ['D', 'E', 'F', ''], '6506': ['H', 'G', 'I', ''], '6507': ['L', 'K', 'J', ''] } },
+      { name: '第二轮', rooms: { '325': ['G', 'A', 'D', ''], '6505': ['E', 'J', 'B', ''], '6506': ['C', 'H', 'K', ''], '6507': ['F', 'I', 'L', ''] } },
+      { name: '第三轮', rooms: { '325': ['K', 'F', 'A', ''], '6505': ['B', 'L', 'G', ''], '6506': ['I', 'C', 'E', ''], '6507': ['J', 'D', 'H', ''] } },
+      { name: '决赛',   rooms: { '325': ['', '', '', ''], '6505': ['', '', '', ''], '6506': ['', '', '', ''], '6507': ['', '', '', ''] } }
+    ]
+  };
+
+  var TOTAL = STAGES.reduce(function (a, s) { return a + (s.container ? s.container.total : s.sec); }, 0);
+
+  /* ============================ 工具 ============================ */
+
+  var $ = function (id) { return document.getElementById(id); };
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+
+  function fmt(sec) {
+    var neg = sec < 0;
+    var s = Math.abs(Math.round(sec));
+    var h = Math.floor(s / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    var r = s % 60;
+    var body = h > 0 ? (h + ':' + pad(m) + ':' + pad(r)) : (pad(m) + ':' + pad(r));
+    return (neg ? '-' : '') + body;
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function clip(s, n) {
+    s = String(s == null ? '' : s);
+    return s.length > n ? s.slice(0, n) + '…' : s;
+  }
+
+  var LS = {
+    get: function (k, d) {
+      try { var v = localStorage.getItem('cupt.v2.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; }
+    },
+    set: function (k, v) {
+      try { localStorage.setItem('cupt.v2.' + k, JSON.stringify(v)); } catch (e) {}
+    }
+  };
+
+  var T0 = performance.now();
+  var W0 = Date.now();
+  function nowMs() { return W0 + (performance.now() - T0); }
+
+  /* ============================ 状态 ============================ */
+
+  var S = {
+    roundIdx: 0,
+    groups: 3,
+    stageRow: 1,
+    stageName: '第 1 阶段',
+    room: '325',
+    draw: LS.get('draw', null),
+    bank: LS.get('bank', null),
+    topicMap: LS.get('topics', {}),
+    records: LS.get('records', []),
+    settings: Object.assign({ sound: true, volume: 0.7, autoNext: true }, LS.get('settings', {})),
+    idx: 0,
+    phase: 'idle',
+    startAt: 0,
+    pausedAcc: 0,
+    pauseAt: 0,
+    extra: {},
+    splitDone: false,
+    doneElapsed: 0,
+    undo: null
+  };
+
+  if (!S.draw || !S.draw.rounds) S.draw = JSON.parse(JSON.stringify(DEFAULT_DRAW));
+  if (!S.bank || !S.bank.length) S.bank = DEFAULT_TOPICS.slice();
+  if (!S.topicMap) S.topicMap = {};
+  S.groups = S.settings.groups === 4 ? 4 : 3;
+
+  // 一次性迁移：默认教室由 6501 调整为 325
+  if (LS.get('room325', false) !== true) {
+    (S.draw.rounds || []).forEach(function (r) {
+      if (r.rooms && r.rooms['6501'] && !r.rooms['325']) {
+        r.rooms['325'] = r.rooms['6501'];
+        delete r.rooms['6501'];
+      }
+    });
+    LS.set('draw', S.draw);
+    LS.set('room325', true);
+  }
+
+  /* ============================ 派生 ============================ */
+
+  function elapsed() {
+    if (S.phase === 'idle') return 0;
+    if (S.phase === 'done') return S.doneElapsed || 0;
+    var end = S.phase === 'paused' ? S.pauseAt : nowMs();
+    return Math.max(0, (end - S.startAt - S.pausedAcc) / 1000);
+  }
+
+  function seg() {
+    var st = STAGES[S.idx];
+    var e = elapsed();
+    if (st.container) {
+      var total = st.container.total + (S.extra[st.key] || 0);
+      var inDisc = S.splitDone || e >= st.container.split;
+      if (!inDisc) return { st: st, name: st.name, hint: st.hint, remain: st.container.split - e, span: total, e: e, mode: 'report' };
+      return { st: st, name: st.container.discName, hint: st.container.discHint, remain: total - e, span: total, e: e, mode: 'disc' };
+    }
+    var t = st.sec + (S.extra[st.key] || 0);
+    return { st: st, name: st.name, hint: st.hint, remain: t - e, span: t, e: e, mode: 'normal' };
+  }
+
+  function roundObj() { return S.draw.rounds[S.roundIdx] || S.draw.rounds[0]; }
+
+  function teamCodes() {
+    var r = roundObj();
+    var arr = r.rooms[S.room];
+    if (!arr) arr = ['', '', '', ''];
+    var out = [];
+    for (var i = 0; i < S.groups; i++) out.push(arr[i] || '');
+    return out;
+  }
+
+  function ensureRoom() {
+    var r = roundObj();
+    if (!r.rooms[S.room]) r.rooms[S.room] = ['', '', '', ''];
+    while (r.rooms[S.room].length < 4) r.rooms[S.room].push('');
+    return r.rooms[S.room];
+  }
+
+  function roleOf(i) {
+    var table = ROLES[S.groups] || ROLES[3];
+    var row = table[Math.min(S.stageRow, table.length) - 1] || table[0];
+    return row[i] || '';
+  }
+
+  function teamsLine() {
+    var codes = teamCodes();
+    return codes.map(function (c, i) {
+      var nm = (S.draw.teams && S.draw.teams[c]) || c || '待定';
+      return roleOf(i) + '：' + clip(nm, 10);
+    }).join(' · ');
+  }
+
+  function ctxText() {
+    return roundObj().name + ' · ' + S.stageName + ' · ' + S.room;
+  }
+
+  function topicKey() {
+    return S.roundIdx + '|' + S.stageName + '|' + S.room;
+  }
+
+  function topicObj() {
+    var no = S.topicMap[topicKey()];
+    if (!no) return null;
+    for (var i = 0; i < S.bank.length; i++) if (S.bank[i].no === no) return S.bank[i];
+    return null;
+  }
+
+  function topicLine() {
+    var t = topicObj();
+    return t ? (t.no + ' ' + t.zh) : '未选';
+  }
+
+  function nextText() {
+    var n = S.idx + 1;
+    if (n >= STAGES.length) return '本阶段结束';
+    var s = STAGES[n];
+    return '下一环节　' + s.name + '　' + fmt(s.container ? s.container.total : s.sec);
+  }
+
+  function rowSeconds(i) {
+    var s = STAGES[i];
+    return s.container ? s.container.split : s.sec;
+  }
+
+  /* ============================ 记录 ============================ */
+
+  function saveRecords() { LS.set('records', S.records); }
+
+  function commit() {
+    var s = seg();
+    var e = s.e;
+    if (S.phase === 'idle' || S.phase === 'done' || e <= 0.3) return;
+    var planned = s.mode === 'report' ? s.st.container.split : s.span;
+    S.records.push({
+      ts: new Date().toISOString(),
+      ctx: ctxText(),
+      round: roundObj().name,
+      stage: S.stageName,
+      room: S.room,
+      item: s.name,
+      planned: Math.round(planned),
+      actual: Math.round(e),
+      over: Math.max(0, Math.round(e - planned))
+    });
+    saveRecords();
+  }
+
+  function snapshot() {
+    return {
+      idx: S.idx, phase: S.phase, startAt: S.startAt, pausedAcc: S.pausedAcc, pauseAt: S.pauseAt,
+      splitDone: S.splitDone, extra: JSON.parse(JSON.stringify(S.extra)), recLen: S.records.length
+    };
+  }
+
+  function restore(sn) {
+    S.idx = sn.idx; S.phase = sn.phase; S.startAt = sn.startAt; S.pausedAcc = sn.pausedAcc;
+    S.pauseAt = sn.pauseAt; S.splitDone = sn.splitDone; S.extra = sn.extra;
+    if (S.records.length > sn.recLen) { S.records.length = sn.recLen; saveRecords(); }
+    lastMark = null;
+  }
+
+  /* ============================ 音效 ============================ */
+
+  var ac = null;
+  function beep(freq, dur, type, gain) {
+    if (!S.settings.sound) return;
+    try {
+      if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+      if (ac.state === 'suspended') ac.resume();
+      var o = ac.createOscillator(), g = ac.createGain();
+      o.type = type || 'sine';
+      o.frequency.value = freq;
+      var vol = (S.settings.volume == null ? 0.7 : S.settings.volume) * (gain == null ? 0.3 : gain);
+      var t = ac.currentTime;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(Math.max(vol, 0.0002), t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t + dur + 0.03);
+    } catch (e) {}
+  }
+
+  var lastMark = null;
+  function checkSound(remain) {
+    var m = Math.ceil(remain);
+    if (m === lastMark) return;
+    lastMark = m;
+    if (m === 10) beep(880, 0.12, 'sine', 0.25);
+    else if (m === 5) { beep(880, 0.1, 'sine', 0.28); setTimeout(function () { beep(1180, 0.12, 'sine', 0.28); }, 150); }
+    else if (m === 0) { beep(440, 0.45, 'square', 0.22); setTimeout(function () { beep(440, 0.45, 'square', 0.22); }, 560); }
+    else if (m < 0 && m % 10 === 0) beep(300, 0.18, 'square', 0.16);
+  }
+
+  function toneFor(remain, span) {
+    if (remain < 0) return 'over';
+    var dangerAt = Math.min(60, span * 0.2);
+    if (remain <= dangerAt) return 'danger';
+    if (remain <= span * 0.25) return 'warn';
+    return 'ok';
+  }
+
+  /* ============================ 渲染：控制台 ============================ */
+
+  var cache = {};
+  function setText(el, key, v) {
+    if (!el || cache[key] === v) return;
+    cache[key] = v;
+    el.textContent = v;
+  }
+
+  function renderMeta() {
+    setText($('mRound'), 'm1', roundObj().name);
+    setText($('mStage'), 'm2', S.stageName);
+    setText($('mRoom'), 'm3', S.room || '未设');
+    setText($('mTopic'), 'm4', topicLine());
+    if (cache['m4c'] !== (topicObj() ? 'y' : 'n')) {
+      cache['m4c'] = topicObj() ? 'y' : 'n';
+      $('mTopic').style.color = topicObj() ? '#8FE3B4' : '#5E6B7A';
+    }
+  }
+
+  function renderFace() {
+    var s = seg();
+    var st = s.st;
+    var cls = toneFor(s.remain, s.span);
+
+    setText($('fTeams'), 'ft', teamsLine());
+    setText($('stageName'), 'fn', s.name);
+    setText($('stageHint'), 'fh', s.hint || '');
+
+    var remEl = $('remain');
+    setText(remEl, 'fr', fmt(s.remain));
+    if (cache['fc'] !== cls) { cache['fc'] = cls; remEl.className = 'f-remain' + (cls === 'ok' ? '' : ' ' + cls); }
+
+    setText($('fSub'), 'fs', S.phase === 'paused' ? '已暂停' : (s.remain < 0 ? '已超时' : '剩余时间'));
+    setText($('fNext'), 'fnext', nextText());
+    var now = new Date();
+    setText($('fClock'), 'fclock', pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()));
+
+    var badge = $('fBadge');
+    var bcls, btxt;
+    if (s.remain < 0) { bcls = 'f-badge over'; btxt = '超时'; }
+    else if (S.phase === 'running') { bcls = 'f-badge run'; btxt = '计时中'; }
+    else if (S.phase === 'paused') { bcls = 'f-badge pause'; btxt = '已暂停'; }
+    else if (S.phase === 'done') { bcls = 'f-badge'; btxt = '本阶段结束'; }
+    else { bcls = 'f-badge'; btxt = '就绪'; }
+    if (cache['fb'] !== bcls + btxt) {
+      cache['fb'] = bcls + btxt;
+      badge.className = bcls;
+      badge.lastChild.textContent = btxt;
+    }
+
+    var pct = s.span > 0 ? Math.max(0, Math.min(1, s.e / s.span)) : 0;
+    var C = 2 * Math.PI * 54;
+    var arc = $('fArc');
+    arc.setAttribute('stroke-dashoffset', (C * (1 - pct)).toFixed(1));
+    arc.setAttribute('stroke', cls === 'ok' ? '#3DDC84' : cls === 'warn' ? '#F2B33D' : '#FF5A5A');
+    setText($('fPct'), 'fp', Math.round(pct * 100) + '%');
+
+    var b = $('btnStart');
+    if (S.phase === 'running') { b.textContent = '暂停'; b.className = 'btn primary big warn'; }
+    else if (S.phase === 'paused') { b.textContent = '继续'; b.className = 'btn primary big'; }
+    else { b.textContent = '开始'; b.className = 'btn primary big'; }
+
+    var canSplit = st.container && (S.phase === 'running' || S.phase === 'paused') && s.mode === 'report';
+    $('btnSplit').hidden = !canSplit;
+
+    if (S.phase === 'running') checkSound(s.remain);
+  }
+
+  function renderList() {
+    var html = '<div class="side-h">本阶段 · 合计 ' + fmt(TOTAL) + '</div>';
+    for (var i = 0; i < STAGES.length; i++) {
+      var s = STAGES[i];
+      html += '<div class="row' + (i === S.idx ? ' on' : '') + (i < S.idx ? ' done' : '') + '" data-i="' + i + '">' +
+        '<span class="idx">' + pad(i + 1) + '</span><span>' + esc(s.name) + '</span>' +
+        '<span class="tt">' + fmt(rowSeconds(i)) + '</span></div>';
+      if (s.container) {
+        html += '<div class="row sub' + (i === S.idx && S.splitDone ? ' on' : '') + '">' +
+          '<span class="idx"></span><span>' + esc(s.container.discName) + '</span>' +
+          '<span class="tt">' + fmt(s.container.total - s.container.split) + '</span></div>';
+      }
+    }
+    $('stageList').innerHTML = html;
+    Array.prototype.forEach.call($('stageList').querySelectorAll('.row[data-i]'), function (r) {
+      r.addEventListener('click', function () { jumpTo(parseInt(this.getAttribute('data-i'), 10)); });
+    });
+  }
+
+  function renderKeys() {
+    $('sideKeys').innerHTML =
+      '<div class="kh">快捷键</div>' +
+      '<div><kbd>空格</kbd>开始 / 暂停</div>' +
+      '<div><kbd>Enter</kbd>下一环节</div>' +
+      '<div><kbd>Ctrl</kbd><kbd>Z</kbd>撤销</div>' +
+      '<div><kbd>+</kbd>补 1 分钟</div>' +
+      '<div><kbd>Esc</kbd>关面板</div>';
+  }
+
+  /* 数字与圆盘按面板高度取尺寸，但短屏上单靠 CSS 比例会超出可用空间，
+     这里量一次实际富余，用一个缩放系数把两者一起收进去。 */
+  function fitFace() {
+    var face = document.querySelector('.face');
+    var body = document.querySelector('.f-body');
+    var left = document.querySelector('.f-left');
+    var ring = document.querySelector('.f-ring');
+    if (!face || !body || !left || !ring) return;
+
+    var have = body.clientHeight;
+    var bcs = getComputedStyle(body);
+    have -= parseFloat(bcs.paddingTop) + parseFloat(bcs.paddingBottom);
+    if (have <= 0) return;
+    var k = 1;
+    face.style.setProperty('--fit', '1');
+    for (var i = 0; i < 6; i++) {
+      var need = Math.max(left.offsetHeight, ring.offsetHeight);
+      if (need <= have) break;
+      k = Math.max(0.3, k * (have / need) * 0.99);
+      face.style.setProperty('--fit', k.toFixed(3));
+    }
+  }
+
+  function renderAll() { renderMeta(); renderFace(); fitFace(); }
+
+  /* ============================ 操作 ============================ */
+
+  function start() {
+    if (S.phase === 'running') { S.pauseAt = nowMs(); S.phase = 'paused'; return; }
+    if (S.phase === 'paused') { S.pausedAcc += nowMs() - S.pauseAt; S.phase = 'running'; lastMark = null; return; }
+    S.startAt = nowMs(); S.pausedAcc = 0; S.doneElapsed = 0; S.phase = 'running'; lastMark = null;
+  }
+
+  function next() {
+    S.undo = { sn: snapshot(), at: Date.now() };
+    commit();
+    if (S.idx >= STAGES.length - 1) {
+      S.doneElapsed = elapsed();
+      S.phase = 'done';
+      toast('本阶段结束，可在「对阵表」里切换到下一阶段');
+      return;
+    }
+    S.idx += 1;
+    S.splitDone = false;
+    S.startAt = nowMs();
+    S.pausedAcc = 0;
+    lastMark = null;
+    S.phase = S.settings.autoNext ? 'running' : 'idle';
+    renderList();
+    toast('已进入「' + seg().name + '」 · Ctrl+Z 可撤销');
+  }
+
+  function splitNow() {
+    if (!STAGES[S.idx].container) return;
+    S.splitDone = true;
+    lastMark = null;
+    toast('已进入正反讨论，剩余时间按 13 分钟容器重算');
+  }
+
+  function addMinute() {
+    var k = STAGES[S.idx].key;
+    S.extra[k] = (S.extra[k] || 0) + 60;
+    toast('本环节已补 1 分钟（累计 ' + Math.round((S.extra[k] || 0) / 60) + ' 分钟）');
+  }
+
+  function resetItem() {
+    S.undo = { sn: snapshot(), at: Date.now() };
+    S.phase = 'idle';
+    S.startAt = 0; S.pausedAcc = 0; S.pauseAt = 0;
+    S.splitDone = false;
+    S.extra[STAGES[S.idx].key] = 0;
+    S.doneElapsed = 0;
+    lastMark = null;
+    toast('本环节已重置');
+  }
+
+  function undo() {
+    if (!S.undo) { toast('没有可撤销的操作'); return; }
+    if (Date.now() - S.undo.at > 60000) { toast('撤销窗口已过期'); return; }
+    restore(S.undo.sn);
+    S.undo = null;
+    renderList();
+    toast('已撤销');
+  }
+
+  function jumpTo(i) {
+    if (i === S.idx && S.phase === 'idle') return;
+    var side = document.querySelector('.side');
+    if (side) side.classList.remove('open');
+    S.undo = { sn: snapshot(), at: Date.now() };
+    commit();
+    S.idx = i;
+    S.splitDone = false;
+    S.phase = 'idle';
+    S.startAt = 0; S.pausedAcc = 0; S.pauseAt = 0;
+    lastMark = null;
+    renderList();
+    toast('已切换到「' + STAGES[i].name + '」，按空格开始');
+  }
+
+  /* ============================ 提示条 ============================ */
+
+  var toastEl = null, toastTimer = null;
+  function toast(msg) {
+    if (!toastEl) {
+      toastEl = document.createElement('div');
+      toastEl.style.cssText = 'position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(8px);' +
+        'background:#1B222B;border:1px solid #333D49;color:#DDE6EF;font-size:13px;padding:9px 17px;border-radius:9px;' +
+        'opacity:0;transition:opacity .18s,transform .18s;pointer-events:none;z-index:80;box-shadow:0 10px 30px rgba(0,0,0,.4)';
+      document.body.appendChild(toastEl);
+    }
+    toastEl.textContent = msg;
+    requestAnimationFrame(function () { toastEl.style.opacity = '1'; toastEl.style.transform = 'translateX(-50%) translateY(0)'; });
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toastEl.style.opacity = '0';
+      toastEl.style.transform = 'translateX(-50%) translateY(8px)';
+    }, 2200);
+  }
+
+  /* ============================ 双窗 ============================ */
+
+  var screenWin = null;
+  var bc = null;
+  try { bc = new BroadcastChannel('cuptclock2026'); } catch (e) {}
+
+  function payload() {
+    var s = seg();
+    return {
+      type: 'state',
+      teams: teamsLine(),
+      name: s.name,
+      remain: s.remain,
+      span: s.span,
+      phase: S.phase,
+      next: nextText(),
+      syncAt: Date.now()
+    };
+  }
+
+  function pushScreen() {
+    var p = payload();
+    if (screenWin && !screenWin.closed) { try { screenWin.postMessage(p, '*'); } catch (e) {} }
+    if (bc) { try { bc.postMessage(p); } catch (e) {} }
+  }
+
+  function openScreen() {
+    var base = location.href.split('#')[0].split('?')[0];
+    screenWin = window.open(base + '?display=1', 'cuptclock_screen', 'width=1366,height=768');
+    if (!screenWin) { toast('弹窗被拦截，请允许弹窗后重试'); return; }
+    setTimeout(pushScreen, 300);
+    toast('展示窗已打开，拖到投影屏按 F11 全屏');
+  }
+
+  function sendCmd(cmd) {
+    var m = { type: 'cmd', cmd: cmd };
+    var sent = false;
+    if (window.opener) {
+      try { window.opener.postMessage(m, '*'); sent = true; } catch (e) {}
+    }
+    if (!sent && bc) { try { bc.postMessage(m); } catch (e) {} }
+    flashSent(cmd);
+  }
+
+  var flashTimer = null;
+  function flashSent(cmd) {
+    var label = { start: '已发送：开始 / 暂停', next: '已发送：下一环节', undo: '已发送：撤销', add: '已发送：补 1 分钟' }[cmd] || '';
+    var el = $('scHint');
+    if (!el) return;
+    el.textContent = label;
+    el.style.opacity = '1';
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () { el.style.opacity = '0'; }, 1200);
+  }
+
+  function handleCmd(cmd) {
+    if (cmd === 'start') start();
+    else if (cmd === 'next') next();
+    else if (cmd === 'undo') undo();
+    else if (cmd === 'add') addMinute();
+    renderFace();
+    renderList();
+    pushScreen();
+  }
+
+  /* ============================ 展示窗 ============================ */
+
+  var scr = null;
+
+  function renderScreen() {
+    if (!scr) {
+      if (cache['wait'] !== 1) {
+        cache['wait'] = 1; cache['ss'] = null;
+        $('scStage').className = 'sc-stage waiting';
+        $('scStage').textContent = '等待控制台连接';
+        $('scTeams').textContent = '';
+        $('scRemain').textContent = '';
+        $('scSub').textContent = '';
+        $('scNext').textContent = '';
+      }
+      return;
+    }
+    if (cache['wait'] === 1) { cache['wait'] = 0; $('scStage').className = 'sc-stage'; cache['ss'] = null; }
+
+    var remain = scr.remain;
+    if (scr.phase === 'running') remain -= (Date.now() - scr.syncAt) / 1000;
+
+    setText($('scTeams'), 'st', scr.teams || '');
+    setText($('scStage'), 'ss', scr.name || '');
+    setText($('scNext'), 'sn', scr.next || '');
+    setText($('scSub'), 'sb', remain < 0 ? '已超时' : '剩余时间');
+
+    var el = $('scRemain');
+    setText(el, 'sr', fmt(remain));
+    var cls = toneFor(remain, scr.span);
+    if (cache['sccls'] !== cls) { cache['sccls'] = cls; el.className = 'sc-remain' + (cls === 'ok' ? '' : ' ' + cls); }
+
+    var pct = scr.span > 0 ? Math.max(0, Math.min(1, 1 - remain / scr.span)) : 0;
+    var C = 2 * Math.PI * 54;
+    var arc = $('scArc');
+    arc.setAttribute('stroke-dashoffset', (C * (1 - pct)).toFixed(1));
+    arc.setAttribute('stroke', cls === 'ok' ? '#3DDC84' : cls === 'warn' ? '#F2B33D' : '#FF5A5A');
+    setText($('scPct'), 'sp', Math.round(pct * 100) + '%');
+
+    var badge = $('scBadge');
+    var bcls, btxt;
+    if (remain < 0) { bcls = 'sc-badge over'; btxt = '超时'; }
+    else if (scr.phase === 'running') { bcls = 'sc-badge run'; btxt = '计时中'; }
+    else if (scr.phase === 'paused') { bcls = 'sc-badge pause'; btxt = '已暂停'; }
+    else if (scr.phase === 'done') { bcls = 'sc-badge'; btxt = '本阶段结束'; }
+    else { bcls = 'sc-badge'; btxt = '就绪'; }
+    if (cache['b'] !== bcls + btxt) {
+      cache['b'] = bcls + btxt;
+      badge.className = bcls;
+      badge.lastChild.textContent = btxt;
+    }
+
+    var now = new Date();
+    setText($('scClock'), 'k', pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()));
+  }
+
+  /* ============================ 面板 ============================ */
+
+  var sheetEl = $('sheet'), bodyEl = $('sheetBody'), titleEl = $('sheetTitle');
+
+  function openSheet(kind) {
+    sheetEl.classList.add('on');
+    if (kind === 'draw') { titleEl.textContent = '对阵表与场次'; renderDraw(); }
+    if (kind === 'records') { titleEl.textContent = '计时记录'; renderRecords(); }
+    if (kind === 'rules') { titleEl.textContent = '赛制与规则'; renderRules(); }
+    if (kind === 'settings') { titleEl.textContent = '设置'; renderSettings(); }
+  }
+  function closeSheet() { sheetEl.classList.remove('on'); }
+
+  function stageSelectOptions() {
+    var opts = [{ v: '1', t: '第 1 阶段' }, { v: '2', t: '第 2 阶段' }, { v: '3', t: '第 3 阶段' }];
+    if (S.groups === 4) opts.push({ v: '4', t: '第 4 阶段' });
+    opts.push({ v: 'final', t: '决赛' }, { v: 'custom', t: '自定义…' });
+    return opts;
+  }
+
+  function currentStageSel() {
+    if (/^第 [1-4] 阶段$/.test(S.stageName)) return S.stageName.slice(2, 3);
+    if (S.stageName === '决赛') return 'final';
+    return 'custom';
+  }
+
+  function bankHintHTML(tail) {
+    return '<div class="bank-hint">' +
+      '<b>支持 .txt 与 .csv 两种文件</b>（UTF-8 编码），每行一题，下面三种写法任选其一：' +
+      '<div class="fmt">' +
+      '<code>15|Cold drink|冰镇冷饮</code><span>三列：编号、英文名、中文名</span>' +
+      '<code>Cold drink|冰镇冷饮</code><span>两列：英文名、中文名，编号自动补</span>' +
+      '<code>冰镇冷饮</code><span>一列：只有中文名，英文名同中文</span>' +
+      '</div>' +
+      '每行用竖线、Tab 或英文逗号分开都行，一份文件里统一用一种即可。' +
+      '导入是<b>追加</b>，与已有题目重复的自动跳过。' + (tail || '') +
+      '</div>';
+  }
+
+  function renderDraw() {
+    var rounds = S.draw.rounds;
+    var r = roundObj();
+    var codes = teamCodes();
+    var sel = currentStageSel();
+
+    var h = '<div class="grid2">';
+    h += '<div class="field"><label>轮次</label><select id="selRound">' +
+      rounds.map(function (x, i) { return '<option value="' + i + '"' + (i === S.roundIdx ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') +
+      '</select></div>';
+    h += '<div class="field"><label>本阶段题目</label><select id="selTopic">' +
+      '<option value="">未选</option>' +
+      S.bank.map(function (t) {
+        var cur = S.topicMap[topicKey()] === t.no ? ' selected' : '';
+        return '<option value="' + esc(t.no) + '"' + cur + '>' + esc(t.no + ' · ' + t.zh) + '</option>';
+      }).join('') +
+      '</select></div>';
+    h += '</div>';
+
+    h += '<div class="grid3" style="margin-top:10px">';
+    h += '<div class="field"><label>阶段</label><select id="selStage">' +
+      stageSelectOptions().map(function (o) {
+        return '<option value="' + o.v + '"' + (o.v === sel ? ' selected' : '') + '>' + o.t + '</option>';
+      }).join('') + '</select></div>';
+    h += '<div class="field"><label>显示名称</label><input id="inpStageName" value="' + esc(S.stageName) + '" placeholder="第 1 阶段"></div>';
+    h += '<div class="field"><label>教室</label><input id="inpRoom" list="roomList" value="' + esc(S.room) + '" placeholder="6501"><datalist id="roomList">' +
+      ROOM_PRESET.map(function (x) { return '<option value="' + x + '">'; }).join('') + '</datalist></div>';
+    h += '</div>';
+
+    h += '<h3>本场队伍（' + S.groups + ' 支）</h3>';
+    for (var i = 0; i < S.groups; i++) {
+      var role = roleOf(i);
+      var code = codes[i] || '';
+      var nm = (S.draw.teams && S.draw.teams[code]) || code || '—';
+      h += '<div class="roster"><span class="role' + (role === '观摩' ? ' obs' : '') + '">' + role + '</span>' +
+        '<input class="code" data-i="' + i + '" value="' + esc(code) + '" placeholder="代号" style="text-align:center">' +
+        '<span style="color:' + (code ? '#C8D4E0' : '#5E6B7A') + '">' + esc(nm) + '</span></div>';
+    }
+
+    h += '<h3>题库</h3><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+      '<label class="btn tiny filepick">导入题库<input type="file" id="fileBank" accept=".txt,.csv"></label>' +
+      '<button class="btn tiny" id="resetBank">恢复默认题库</button>' +
+      '<span style="font-size:11.5px;color:#6E7C8B">当前题库 ' + S.bank.length + ' 题</span></div>';
+    h += bankHintHTML('导完在「本阶段题目」下拉里就能选到。');
+
+    h += '<h3>队伍名称</h3><div class="grid4">';
+    Object.keys(S.draw.teams).forEach(function (k) {
+      h += '<div class="team-row"><span>' + k + '</span><input data-team="' + k + '" value="' + esc(S.draw.teams[k]) + '"></div>';
+    });
+    h += '</div>';
+
+    h += '<div class="sheet-actions"><button class="btn primary" id="applyDraw">应用</button>' +
+      '<button class="btn" id="resetDraw">恢复默认对阵</button></div>';
+
+    bodyEl.innerHTML = h;
+
+    bodyEl.querySelector('#selRound').addEventListener('change', function () {
+      S.roundIdx = parseInt(this.value, 10);
+      saveDraw();
+      renderDraw();
+    });
+
+    bodyEl.querySelector('#selStage').addEventListener('change', function () {
+      var v = this.value;
+      if (v === 'final') { S.stageRow = 1; S.stageName = '决赛'; }
+      else if (v === 'custom') { S.stageRow = 1; S.stageName = '自定义阶段'; }
+      else { S.stageRow = parseInt(v, 10); S.stageName = '第 ' + v + ' 阶段'; }
+      bodyEl.querySelector('#inpStageName').value = S.stageName;
+      renderDraw();
+    });
+
+    bodyEl.querySelector('#inpStageName').addEventListener('change', function () {
+      var v = this.value.trim();
+      if (v) S.stageName = v;
+    });
+
+    bodyEl.querySelector('#inpRoom').addEventListener('change', function () {
+      var v = this.value.trim();
+      if (v) { S.room = v; ensureRoom(); saveDraw(); renderAll(); pushScreen(); renderDraw(); }
+    });
+
+    bodyEl.querySelector('#selTopic').addEventListener('change', function () {
+      var v = this.value;
+      if (!v) delete S.topicMap[topicKey()];
+      else S.topicMap[topicKey()] = v;
+      LS.set('topics', S.topicMap);
+      renderMeta();
+      pushScreen();
+    });
+
+    Array.prototype.forEach.call(bodyEl.querySelectorAll('input.code'), function (inp) {
+      inp.addEventListener('change', function () {
+        var arr = ensureRoom();
+        arr[parseInt(this.getAttribute('data-i'), 10)] = this.value.trim().toUpperCase();
+        saveDraw();
+        renderDraw();
+      });
+    });
+
+    bodyEl.querySelector('#fileBank').addEventListener('change', function (e) {
+      var f = e.target.files && e.target.files[0];
+      if (!f) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        var text = String(reader.result || '');
+        var added = 0;
+        text.split(/\r?\n/).forEach(function (line) {
+          line = line.trim();
+          if (!line) return;
+          var parts = line.split(/[|\t,]/).map(function (x) { return x.trim(); }).filter(Boolean);
+          var item;
+          if (parts.length >= 3) item = { no: parts[0], en: parts[1], zh: parts.slice(2).join(' ') };
+          else if (parts.length === 2) item = { no: String(S.bank.length + 1), en: parts[0], zh: parts[1] };
+          else item = { no: String(S.bank.length + 1), en: parts[0], zh: parts[0] };
+          var dup = S.bank.some(function (t) { return t.zh === item.zh && t.en === item.en; });
+          if (!dup) { S.bank.push(item); added++; }
+        });
+        LS.set('bank', S.bank);
+        toast('已导入 ' + added + ' 道题');
+        renderDraw();
+      };
+      reader.readAsText(f, 'utf-8');
+    });
+
+    bodyEl.querySelector('#resetBank').addEventListener('click', function () {
+      S.bank = DEFAULT_TOPICS.slice();
+      LS.set('bank', S.bank);
+      renderDraw();
+      toast('题库已恢复为默认九题');
+    });
+
+    bodyEl.querySelector('#applyDraw').addEventListener('click', function () {
+      var nameInput = bodyEl.querySelector('#inpStageName');
+      if (nameInput && nameInput.value.trim()) S.stageName = nameInput.value.trim();
+      Array.prototype.forEach.call(bodyEl.querySelectorAll('input[data-team]'), function (inp) {
+        var k = inp.getAttribute('data-team');
+        S.draw.teams[k] = inp.value.trim() || k;
+      });
+      saveDraw();
+      closeSheet();
+      renderList(); renderAll(); pushScreen();
+      toast('已应用：' + ctxText());
+    });
+
+    bodyEl.querySelector('#resetDraw').addEventListener('click', function () {
+      S.draw = JSON.parse(JSON.stringify(DEFAULT_DRAW));
+      S.roundIdx = 0; S.stageRow = 1; S.stageName = '第 1 阶段'; S.room = '325';
+      saveDraw();
+      renderDraw();
+      toast('已恢复默认对阵');
+    });
+  }
+
+  function saveDraw() { LS.set('draw', S.draw); }
+
+  function renderRecords() {
+    if (!S.records.length) { bodyEl.innerHTML = '<div class="empty">还没有记录。每结束一个环节会自动记一条。</div>'; return; }
+    var h = '<table><tr><th>时间</th><th>场次</th><th>环节</th><th class="num">计划</th><th class="num">实际</th><th class="num">超时</th></tr>';
+    S.records.slice().reverse().forEach(function (r) {
+      var d = new Date(r.ts);
+      h += '<tr><td class="mono">' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + '</td>' +
+        '<td>' + esc(r.ctx) + '</td><td>' + esc(r.item) + '</td>' +
+        '<td class="num">' + fmt(r.planned) + '</td><td class="num">' + fmt(r.actual) + '</td>' +
+        '<td class="num" style="color:' + (r.over > 0 ? 'var(--red)' : 'var(--dim2)') + '">' + (r.over > 0 ? '+' + fmt(r.over) : '—') + '</td></tr>';
+    });
+    h += '</table><div class="sheet-actions"><button class="btn primary" id="expCsv">导出 CSV</button>' +
+      '<button class="btn" id="clrRec">清空记录</button></div>';
+    bodyEl.innerHTML = h;
+    bodyEl.querySelector('#expCsv').addEventListener('click', exportCSV);
+    bodyEl.querySelector('#clrRec').addEventListener('click', function () {
+      if (!confirm('确定清空全部计时记录？建议先导出。')) return;
+      S.records = []; saveRecords(); renderRecords();
+    });
+  }
+
+  function exportCSV() {
+    var rows = [['时间', '场次', '轮次', '阶段', '教室', '环节', '计划秒', '实际秒', '超时秒']];
+    S.records.forEach(function (r) { rows.push([r.ts, r.ctx, r.round, r.stage, r.room, r.item, r.planned, r.actual, r.over]); });
+    var csv = '\ufeff' + rows.map(function (row) {
+      return row.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(',');
+    }).join('\r\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'CUPT计时记录-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 500);
+  }
+
+  function renderRules() {
+    var flow = [
+      ['1', '挑战与回应', '01:00', '反方挑战题目，正方当场接受或拒绝'],
+      ['2', '正方准备', '01:00', ''],
+      ['3', '正方报告', '12:00', '陈述、实验与理论'],
+      ['4', '反方提问', '02:00', '正方回答'],
+      ['5', '反方准备', '02:00', ''],
+      ['6', '反方报告 + 正反讨论', '03:00 / 13:00', '反方最多 3 分钟；此时段共 13 分钟，剩余自动并入讨论'],
+      ['7', '评论方提问', '03:00', '正、反方回答'],
+      ['8', '评论方准备', '02:00', ''],
+      ['9', '评论方报告', '04:00', ''],
+      ['10', '正方总结', '01:00', ''],
+      ['11', '裁判打分', '04:00', '出示评分'],
+      ['12', '裁判点评', '05:00', '']
+    ];
+    var roles = S.groups === 4 ? ROLES[4] : ROLES[3];
+    var stageNames = S.groups === 4 ? ['第 1 阶段', '第 2 阶段', '第 3 阶段', '第 4 阶段'] : ['第 1 阶段', '第 2 阶段', '第 3 阶段'];
+
+    var h = '<h3>一个阶段的时间分配（合计 50:00）</h3><table class="flow"><tr><th>#</th><th>环节</th><th>时长</th><th>说明</th></tr>';
+    flow.forEach(function (r) {
+      h += '<tr><td class="mono">' + r[0] + '</td><td>' + r[1] + '</td><td class="mono">' + r[2] + '</td><td style="color:#5E6B7A">' + r[3] + '</td></tr>';
+    });
+    h += '</table><div class="note">手册表 2 把「反方向正方挑战」与「正方接受或拒绝」各记 1 分钟，逐项相加为 51 分钟。赛场上这两件事连续发生，本程序合并为 1 分钟，整阶段正好 50:00。</div>';
+
+    h += '<h3>反方报告的时间怎么流进讨论</h3>' +
+      '<p>第 6 项在程序里是一个 13 分钟的容器，3 分钟只是显示上的分界：3 分钟内标题显示「反方报告」，剩余 = 3 分钟 − 已用；满 3 分钟自动切到「正反讨论」，剩余 = 13 分钟 − 已用。反方提前讲完按下「进入讨论」立即切换，剩余同样按 13 分钟算，等于把没用完的时间送给讨论；反方超时，讨论自动被扣掉同等时间。全程不需要另外按任何键。</p>';
+
+    h += '<h3>角色轮换（' + S.groups + ' 支队伍）</h3><table class="kv"><tr><th>阶段</th>' +
+      ['队 1', '队 2', '队 3', '队 4'].slice(0, S.groups).map(function (x) { return '<th>' + x + '</th>'; }).join('') + '</tr>';
+    roles.forEach(function (row, i) {
+      h += '<tr><td>' + stageNames[i] + '</td>' + row.map(function (x) { return '<td>' + x + '</td>'; }).join('') + '</tr>';
+    });
+    h += '</table>';
+
+    h += '<h3>题目挑战和拒绝规则</h3>' +
+      '<p class="quote">在同一轮对抗赛中，题目只能被陈述一次。反方可以向正方挑战任何一道题目，但有以下情况除外：<br>' +
+      'A. 正方在先前比赛及本轮中已经拒绝过的题目；<br>' +
+      'B. 正方在先前比赛及本轮中已经陈述过的题目；<br>' +
+      'C. 反方在先前比赛及本轮中作为反方挑战过的题目；<br>' +
+      'D. 反方在先前比赛及本轮中作为正方陈述过的题目。<br><br>' +
+      '如果可供挑战的题目小于三道，则上述限制按照 DCBA 的顺序予以解除。在一支队伍的全部比赛中正方对于可供挑战的题目，总计可以拒绝三次而不被扣分，之后每拒绝一次则从正方的加权系数中扣去 0.2 分。累计拒绝六次，正方加权系数将设为 1.0。若多次拒题，最后可供挑战的题目小于 1 道时，为保证比赛可以继续进行，正方可自选本轮次中没有讲过的题目报告，且加权系数设为 0.7。</p>';
+
+    h += '<h3>评分</h3>' +
+      '<p>每一阶段赛后，每位裁判就各队承担的角色表现打分，分数为 1 至 10 的整数分数。裁判组的加权平均分数作为队伍在该阶段比赛的成绩（角色成绩）。加权方法为：最高分与最低分赋予权重 0.5，其余分数赋予权重 1.0，即<br>' +
+      '每阶段得分 = [0.5×(最高分＋最低分)＋其余分数] ÷ (裁判数−1)<br><br>' +
+      '每一轮赛后，将队伍的角色成绩按不同角色加权求和，并把结果四舍五入保留 2 位小数，作为队伍在该轮比赛的成绩。角色加权系数为：正方×3.0（或少于 3.0，见 2.3 小节）；反方×2.0；评论方×1.0。</p>';
+
+    h += '<h3>快捷键</h3><table class="kv"><tr><th>按键</th><th>作用</th></tr>' +
+      '<tr><td class="mono">空格</td><td>开始 / 暂停 / 继续（不再兼作停止）</td></tr>' +
+      '<tr><td class="mono">Enter</td><td>结束本环节并进入下一环节</td></tr>' +
+      '<tr><td class="mono">Ctrl + Z</td><td>撤销上一步操作</td></tr>' +
+      '<tr><td class="mono">+ / =</td><td>本环节补 1 分钟</td></tr>' +
+      '<tr><td class="mono">Esc</td><td>关闭面板</td></tr></table>';
+
+    h += '<h3>题库导入</h3>' +
+      bankHintHTML('入口在「对阵表」面板的题库一栏。');
+
+    h += '<div class="disclaimer">' +
+      '<h4>责 任 声 明</h4>' +
+      '<p><b>一、开发主体</b>　本软件（CUPTClockNeo 2026）由中山大学 JONSIE 与人工智能协作开发完成，采用网页技术实现，离线运行，不采集任何用户数据。</p>' +
+      '<p><b>二、适用范围</b>　本软件适用于中国大学生物理学术竞赛（CUPT）框架内的校赛、模拟赛及队伍训练计时。使用者应在赛前确认其计时节次与所在赛事规则一致；因赛制调整产生的时长差异，由使用者自行核对。</p>' +
+      '<p><b>三、使用责任</b>　本软件按现状无偿提供，已尽力保证计时准确与运行稳定。使用者应遵照《使用说明》完成赛前检查；因设备故障、误操作、断电或其他不可控因素造成的计时偏差及由此引发的赛事后果，开发者不承担连带责任。重要场次建议保留人工计时作为备份。</p>' +
+      '<p><b>四、权利保留</b>　本软件<b>禁止任何形式的商业使用</b>，包括但不限于出售、出租、捆绑销售，以及以本软件对外提供有偿计时服务。<b>著作权及其他一切权利均由开发者保留。</b></p>' +
+      '<p><b>四、版本与发布</b>　版本号 <b>v1.1.0</b>；发布日期 <b>2026 年 11 月 15 日</b>。</p>' +
+      '<p><b>五、反馈与意见</b>　联系方式：<b>152050152@qq.com</b></p>' +
+      '<div class="sign">CUPTClockNeo 2026　|　中山大学 JONSIE</div>' +
+      '</div>';
+
+    bodyEl.innerHTML = h;
+  }
+
+  function renderSettings() {
+    bodyEl.innerHTML =
+      '<div class="grid2">' +
+      '<div class="field"><label>同一轮内比赛分组</label><select id="setGroups">' +
+      '<option value="3"' + (S.groups === 3 ? ' selected' : '') + '>三支队伍（正方 / 反方 / 评论）</option>' +
+      '<option value="4"' + (S.groups === 4 ? ' selected' : '') + '>四支队伍（正方 / 反方 / 评论 / 观摩）</option>' +
+      '</select></div>' +
+      '<div class="field"><label>进入下一环节后</label><select id="setAuto">' +
+      '<option value="1"' + (S.settings.autoNext ? ' selected' : '') + '>自动开始计时</option>' +
+      '<option value="0"' + (!S.settings.autoNext ? ' selected' : '') + '>停在待开始，等我按空格</option>' +
+      '</select></div>' +
+      '</div>' +
+      '<div class="grid2" style="margin-top:12px">' +
+      '<div class="field"><label>倒数提示音</label><select id="setSound">' +
+      '<option value="1"' + (S.settings.sound ? ' selected' : '') + '>开启</option>' +
+      '<option value="0"' + (!S.settings.sound ? ' selected' : '') + '>关闭</option></select></div>' +
+      '<div class="field"><label>音量（0–1）</label><input id="setVol" type="number" min="0" max="1" step="0.1" value="' + S.settings.volume + '"></div>' +
+      '</div>' +
+      '<div class="note">切换分组后，对阵表的队伍列与角色轮换会同步改变，计时流程（13 项 / 50 分钟）不受影响。</div>' +
+      '<div class="sheet-actions"><button class="btn primary" id="setSave">保存</button>' +
+      '<button class="btn" id="setTest">试听提示音</button></div>';
+
+    bodyEl.querySelector('#setTest').addEventListener('click', function () {
+      beep(880, 0.1, 'sine', 0.3);
+      setTimeout(function () { beep(1180, 0.12, 'sine', 0.3); }, 160);
+    });
+    bodyEl.querySelector('#setSave').addEventListener('click', function () {
+      S.settings.sound = bodyEl.querySelector('#setSound').value === '1';
+      var v = parseFloat(bodyEl.querySelector('#setVol').value);
+      S.settings.volume = isNaN(v) ? 0.7 : Math.max(0, Math.min(1, v));
+      S.settings.autoNext = bodyEl.querySelector('#setAuto').value === '1';
+      S.settings.groups = parseInt(bodyEl.querySelector('#setGroups').value, 10) === 4 ? 4 : 3;
+      S.groups = S.settings.groups;
+      if (S.stageRow > S.groups) S.stageRow = 1;
+      LS.set('settings', S.settings);
+      closeSheet();
+      renderList(); renderAll(); pushScreen();
+      toast('已切换为 ' + S.groups + ' 支队伍分组');
+    });
+  }
+
+  /* ============================ 键盘 ============================ */
+
+  function sheetOpen() { return sheetEl.classList.contains('on'); }
+
+  document.addEventListener('keydown', function (e) {
+    var tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+
+    if (IS_SCREEN) {
+      var cmd = null;
+      if (e.code === 'Space' || e.key === ' ') cmd = 'start';
+      else if (e.key === 'Enter') cmd = 'next';
+      else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) cmd = 'undo';
+      else if (e.key === '+' || e.key === '=') cmd = 'add';
+      if (cmd) { e.preventDefault(); sendCmd(cmd); return; }
+      if (e.key === 'Escape' && document.fullscreenElement) document.exitFullscreen();
+      return;
+    }
+
+    if (sheetOpen()) { if (e.key === 'Escape') { closeSheet(); e.preventDefault(); } return; }
+
+    if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); start(); renderFace(); pushScreen(); return; }
+    if (e.key === 'Enter') { e.preventDefault(); next(); pushScreen(); return; }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); undo(); pushScreen(); return; }
+    if (e.key === '+' || e.key === '=') { e.preventDefault(); addMinute(); pushScreen(); return; }
+    if (e.key === 'Escape' && document.fullscreenElement) document.exitFullscreen();
+  });
+
+  /* ============================ 启动 ============================ */
+
+  if (IS_SCREEN) {
+    document.title = 'CUPTClockNeo 2026 · 展示窗';
+    document.body.classList.add('display');
+    document.addEventListener('dblclick', function () {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function () {});
+      else document.exitFullscreen();
+    });
+    window.addEventListener('message', function (ev) { if (ev.data && ev.data.type === 'state') scr = ev.data; });
+    if (bc) bc.onmessage = function (ev) { if (ev.data && ev.data.type === 'state') scr = ev.data; };
+    if (IS_DEMO) {
+      scr = {
+        teams: '正方：A · 反方：B · 评论：C',
+        name: '正方报告', remain: 437, span: 720, phase: 'running',
+        next: '下一环节　反方提问　02:00', syncAt: Date.now()
+      };
+    }
+    var lc = 0;
+    (function loop(ts) {
+      requestAnimationFrame(loop);
+      if (ts - lc < 80) return;
+      lc = ts;
+      renderScreen();
+    })(0);
+  } else {
+    renderList(); renderKeys(); renderAll();
+
+    var fitTimer = 0;
+    function scheduleFit() {
+      clearTimeout(fitTimer);
+      fitTimer = setTimeout(fitFace, 60);
+    }
+    window.addEventListener('resize', scheduleFit);
+    window.addEventListener('orientationchange', scheduleFit);
+    document.addEventListener('fullscreenchange', scheduleFit);
+    if (window.ResizeObserver) new ResizeObserver(scheduleFit).observe(document.querySelector('.face'));
+
+    window.addEventListener('message', function (ev) {
+      if (ev.data && ev.data.type === 'cmd') handleCmd(ev.data.cmd);
+    });
+    if (bc) {
+      bc.onmessage = function (ev) {
+        if (ev.data && ev.data.type === 'cmd') handleCmd(ev.data.cmd);
+      };
+    }
+
+    $('btnStart').addEventListener('click', function () { start(); renderFace(); pushScreen(); this.blur(); });
+    $('btnNext').addEventListener('click', function () { next(); pushScreen(); this.blur(); });
+    $('btnSplit').addEventListener('click', function () { splitNow(); pushScreen(); this.blur(); });
+    $('btnAdd').addEventListener('click', function () { addMinute(); pushScreen(); this.blur(); });
+    $('btnReset').addEventListener('click', function () { resetItem(); pushScreen(); this.blur(); });
+    $('btnScreen').addEventListener('click', function () { openScreen(); this.blur(); });
+    $('sideToggle').addEventListener('click', function () {
+      document.querySelector('.side').classList.toggle('open');
+      this.blur();
+    });
+    $('metaStrip').addEventListener('click', function () { openSheet('draw'); });
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-sheet]'), function (b) {
+      b.addEventListener('click', function () { openSheet(this.getAttribute('data-sheet')); this.blur(); });
+    });
+    $('sheetClose').addEventListener('click', closeSheet);
+    sheetEl.addEventListener('click', function (e) { if (e.target === sheetEl) closeSheet(); });
+
+    window.addEventListener('beforeunload', function (e) {
+      if (S.phase === 'running') { e.preventDefault(); e.returnValue = ''; }
+    });
+
+    var lastPush = 0, lastFrame = 0;
+    (function loop(ts) {
+      requestAnimationFrame(loop);
+      if (ts - lastFrame < 80) return;
+      lastFrame = ts;
+      renderFace();
+      if (ts - lastPush > 250) { lastPush = ts; pushScreen(); }
+    })(0);
+  }
+
+})();
+</script>
+</body>
+</html>
