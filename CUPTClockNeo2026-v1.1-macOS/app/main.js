@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -52,23 +52,37 @@ function createConsole() {
     });
   }
 
-  win.webContents.setWindowOpenHandler(() => ({
-    action: 'allow',
-    overrideBrowserWindowOptions: {
-      width: 1366,
-      height: 768,
-      backgroundColor: '#05070A',
-      autoHideMenuBar: true,
-      title: 'CUPTClockNeo 2026 · 展示窗',
-      icon: path.join(__dirname, 'icon.ico'),
-      webPreferences: {
-        contextIsolation: true,
-        nodeIntegration: false,
-        backgroundThrottling: false,
-        spellcheck: false
-      }
+  // 站外链接（反馈用的 GitHub Issues）交给系统浏览器，不在应用里开窗，免得顶掉正在跑的计时
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:/i.test(url)) {
+      shell.openExternal(url);
+      return { action: 'deny' };
     }
-  }));
+    return {
+      action: 'allow',
+      overrideBrowserWindowOptions: {
+        width: 1366,
+        height: 768,
+        backgroundColor: '#05070A',
+        autoHideMenuBar: true,
+        title: 'CUPTClockNeo 2026 · 展示窗',
+        icon: path.join(__dirname, 'icon.ico'),
+        webPreferences: {
+          contextIsolation: true,
+          nodeIntegration: false,
+          backgroundThrottling: false,
+          spellcheck: false
+        }
+      }
+    };
+  });
+
+  win.webContents.on('will-navigate', (e, url) => {
+    if (/^https?:/i.test(url)) {
+      e.preventDefault();
+      shell.openExternal(url);
+    }
+  });
 
   return win;
 }

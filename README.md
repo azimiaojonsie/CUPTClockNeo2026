@@ -114,4 +114,4 @@ cupt-clock-neo/
 
 本软件由中山大学 JONSIE 与人工智能协作开发，适用于 CUPT 框架内的校赛、模拟赛及队伍训练计时，**禁止任何形式的商业使用**，著作权及其他一切权利由开发者保留。软件按现状无偿提供，赛前请确认节次与规则一致，并保留人工计时作为备份。完整条款见 [使用说明.md](使用说明.md) 末尾。
 
-反馈与意见：152050152@qq.com
+反馈与意见：提 [GitHub Issue](https://github.com/azimiaojonsie/CUPTClockNeo2026/issues)，写明版本号与复现步骤。
